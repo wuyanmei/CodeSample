@@ -1,0 +1,85 @@
+{
+  "stringTable": {
+    "0": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/.externalNativeBuild/cmake/debug/armeabi-v7a",
+    "1": "--target=armv7-none-linux-androideabi23 --gcc-toolchain=/home/jiangkunpeng/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64 --sysroot=/home/jiangkunpeng/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DSobelFilter_EXPORTS -I/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-addrsig -march=armv7-a -mthumb -Wa,--noexecstack -Wformat -Werror=format-security -O0 -fno-limit-debug-info -fPIC -std=gnu++11",
+    "2": "--target=armv7-none-linux-androideabi23 --gcc-toolchain=/home/jiangkunpeng/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64 --sysroot=/home/jiangkunpeng/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DSobelFilter_EXPORTS -I/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-addrsig -march=armv7-a -mthumb -Wa,--noexecstack -Wformat -Werror=format-security -O0 -fno-limit-debug-info -fPIC"
+  },
+  "buildFiles": [
+    "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/../../../../Android/Sdk/ndk-bundle/build/cmake/platforms.cmake",
+    "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/../../../../Android/Sdk/ndk-bundle/build/cmake/android.toolchain.cmake",
+    "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/CMakeLists.txt"
+  ],
+  "cleanCommands": [
+    "/home/jiangkunpeng/Android/Sdk/cmake/3.10.2.4988404/bin/cmake --build /home/jiangkunpeng/open_source/CodeSample/opencl_demo/.externalNativeBuild/cmake/debug/armeabi-v7a --target clean"
+  ],
+  "libraries": {
+    "SobelFilter-Debug-armeabi-v7a": {
+      "buildCommand": "/home/jiangkunpeng/Android/Sdk/cmake/3.10.2.4988404/bin/cmake --build /home/jiangkunpeng/open_source/CodeSample/opencl_demo/.externalNativeBuild/cmake/debug/armeabi-v7a --target SobelFilter",
+      "buildType": "debug",
+      "toolchain": "2137338276",
+      "abi": "armeabi-v7a",
+      "artifactName": "SobelFilter",
+      "files": [
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/aopencl.h",
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/com_white_imagesobelfilter_nativeSobelFilter.h",
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/CL/cl.h",
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/CL/cl_ext.h",
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/CL/cl_gl.h",
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/CL/cl_gl_ext.h",
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/CL/cl_platform.h",
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/CL/opencl.h",
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/CL/cl.hpp",
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/aopencl.c",
+          "flagsOrdinal": 2,
+          "workingDirectoryOrdinal": 0
+        },
+        {
+          "src": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/ImageSobelFilter.cpp",
+          "flagsOrdinal": 1,
+          "workingDirectoryOrdinal": 0
+        }
+      ],
+      "output": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/build/intermediates/cmake/debug/obj/armeabi-v7a/libSobelFilter.so"
+    }
+  },
+  "toolchains": {
+    "2137338276": {
+      "cCompilerExecutable": "/home/jiangkunpeng/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/clang",
+      "cppCompilerExecutable": "/home/jiangkunpeng/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
+    }
+  },
+  "cFileExtensions": [
+    "c"
+  ],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}

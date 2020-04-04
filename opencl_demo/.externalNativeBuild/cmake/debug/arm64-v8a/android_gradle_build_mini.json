@@ -1,0 +1,18 @@
+{
+  "buildFiles": [
+    "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/../../../../Android/Sdk/ndk-bundle/build/cmake/platforms.cmake",
+    "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/../../../../Android/Sdk/ndk-bundle/build/cmake/android.toolchain.cmake",
+    "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni/CMakeLists.txt"
+  ],
+  "cleanCommands": [
+    "/home/jiangkunpeng/Android/Sdk/cmake/3.10.2.4988404/bin/cmake --build /home/jiangkunpeng/open_source/CodeSample/opencl_demo/.externalNativeBuild/cmake/debug/arm64-v8a --target clean"
+  ],
+  "libraries": {
+    "SobelFilter-Debug-arm64-v8a": {
+      "artifactName": "SobelFilter",
+      "buildCommand": "/home/jiangkunpeng/Android/Sdk/cmake/3.10.2.4988404/bin/cmake --build /home/jiangkunpeng/open_source/CodeSample/opencl_demo/.externalNativeBuild/cmake/debug/arm64-v8a --target SobelFilter",
+      "abi": "arm64-v8a",
+      "output": "/home/jiangkunpeng/open_source/CodeSample/opencl_demo/build/intermediates/cmake/debug/obj/arm64-v8a/libSobelFilter.so"
+    }
+  }
+}

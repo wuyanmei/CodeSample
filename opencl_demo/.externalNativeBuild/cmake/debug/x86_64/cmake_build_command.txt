@@ -1,0 +1,21 @@
+Executable : /home/jiangkunpeng/Android/Sdk/cmake/3.10.2.4988404/bin/cmake
+arguments : 
+-H/home/jiangkunpeng/open_source/CodeSample/opencl_demo/jni
+-B/home/jiangkunpeng/open_source/CodeSample/opencl_demo/.externalNativeBuild/cmake/debug/x86_64
+-DANDROID_ABI=x86_64
+-DANDROID_PLATFORM=android-23
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/home/jiangkunpeng/open_source/CodeSample/opencl_demo/build/intermediates/cmake/debug/obj/x86_64
+-DCMAKE_BUILD_TYPE=Debug
+-DANDROID_NDK=/home/jiangkunpeng/Android/Sdk/ndk-bundle
+-DCMAKE_SYSTEM_NAME=Android
+-DCMAKE_ANDROID_ARCH_ABI=x86_64
+-DCMAKE_SYSTEM_VERSION=23
+-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+-DCMAKE_ANDROID_NDK=/home/jiangkunpeng/Android/Sdk/ndk-bundle
+-DCMAKE_TOOLCHAIN_FILE=/home/jiangkunpeng/Android/Sdk/ndk-bundle/build/cmake/android.toolchain.cmake
+-G Ninja
+-DCMAKE_MAKE_PROGRAM=/home/jiangkunpeng/Android/Sdk/cmake/3.10.2.4988404/bin/ninja
+-DANDROID_TOOLCHAIN=clang
+-DANDROID_STL=c++_shared
+jvmArgs : 
+

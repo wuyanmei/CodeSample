@@ -1,0 +1,4 @@
+
+rootProject.name = 'CodeSamples'
+include ':opencl_demo'
+
