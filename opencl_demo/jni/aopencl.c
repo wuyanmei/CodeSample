@@ -14,8 +14,8 @@
 
 static int loadedCL;
 #define LIB_OPENCL "/vendor/lib64/libOpenCL.so"
-#define LIB_GLES "/vendor/lib64/egl/libGLESv2_adreno.so"
-#define LIB_LLVM   "/vendor/lib64/libllvm-qcom.so"
+//#define LIB_GLES "/vendor/lib64/egl/libGLESv2_adreno.so"
+//#define LIB_LLVM   "/vendor/lib64/libllvm-qcom.so"
 
 static void *getCLHandle(){
   void *res = NULL;
@@ -23,23 +23,25 @@ static void *getCLHandle(){
 
   LOGD("start dlopen %s\n", LIB_OPENCL);
   res = dlopen(LIB_OPENCL, RTLD_LAZY);
-  LOGD("after dlopen res=%p\n", res);
-  if(res != NULL){
-    so_name = LIB_OPENCL;
-  }else{
-    res = dlopen(LIB_GLES,RTLD_LAZY);
-  }
-  if(res != NULL){
-    so_name = LIB_GLES;
-  }else{
-    res = dlopen(LIB_LLVM,RTLD_LAZY);
-  }
-
   if(res != NULL) {
-      so_name=LIB_LLVM;
+      so_name = LIB_OPENCL;
   } else {
-      LOGD("Could not open library :(\n");
+      LOGD("faile to dlopen %s\n", LIB_OPENCL);
   }
+//  else {
+//    res = dlopen(LIB_GLES,RTLD_LAZY);
+//  }
+//  if(res != NULL){
+//    so_name = LIB_GLES;
+//  }else{
+//    res = dlopen(LIB_LLVM,RTLD_LAZY);
+//  }
+//
+//  if(res != NULL) {
+//      so_name=LIB_LLVM;
+//  } else {
+//      LOGD("Could not open library :(\n");
+//  }
   LOGD("Loaded library name:%s\n",so_name);
   return res;
 }

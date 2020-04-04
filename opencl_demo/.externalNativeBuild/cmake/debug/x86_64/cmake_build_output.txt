@@ -1,2 +1,0 @@
-ANDROID_ABI=x86_64
-Configuring done

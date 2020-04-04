@@ -1,6 +1,0 @@
-# ninja log v5
-1	54	1586001417	CMakeFiles/SobelFilter.dir/aopencl.c.o	6456af10b1407e3d
-1	188	1586001418	CMakeFiles/SobelFilter.dir/ImageSobelFilter.cpp.o	27ec2ff92e63f87a
-188	203	1586001418	/home/jiangkunpeng/open_source/CodeSample/opencl_demo/build/intermediates/cmake/debug/obj/armeabi-v7a/libSobelFilter.so	ac6536babbf4d0af
-0	147	1586002566	CMakeFiles/SobelFilter.dir/ImageSobelFilter.cpp.o	27ec2ff92e63f87a
-147	162	1586002566	/home/jiangkunpeng/open_source/CodeSample/opencl_demo/build/intermediates/cmake/debug/obj/armeabi-v7a/libSobelFilter.so	ac6536babbf4d0af

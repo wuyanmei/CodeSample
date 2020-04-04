@@ -1,2 +1,0 @@
-ANDROID_ABI=armeabi-v7a
-Configuring done

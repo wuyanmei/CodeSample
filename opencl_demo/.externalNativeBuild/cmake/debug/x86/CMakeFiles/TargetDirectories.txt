@@ -1,3 +1,0 @@
-/home/jiangkunpeng/open_source/CodeSample/opencl_demo/.externalNativeBuild/cmake/debug/x86/CMakeFiles/rebuild_cache.dir
-/home/jiangkunpeng/open_source/CodeSample/opencl_demo/.externalNativeBuild/cmake/debug/x86/CMakeFiles/edit_cache.dir
-/home/jiangkunpeng/open_source/CodeSample/opencl_demo/.externalNativeBuild/cmake/debug/x86/CMakeFiles/SobelFilter.dir

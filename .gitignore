@@ -38,7 +38,7 @@ build
 /.idea
 gradle.properties
 
-
+.externalNativeBuild
 # source insight proj files
 *.IAB
 *.IAD
