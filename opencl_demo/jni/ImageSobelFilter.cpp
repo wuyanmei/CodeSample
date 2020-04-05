@@ -13,41 +13,179 @@
 
 using namespace std;
 
-#define N 20
-#define  KERNEL_SRC "\n" \
-	"			__kernel void Sobel(__global char *array1, __global char *array2, __global int *array3)		\n "\
-	"			{																							\n "\
-	"				size_t gidx = get_global_id(0);															\n "\
-	"				size_t gidy = get_global_id(1);															\n "\
-	"				unsigned char a00, a01, a02;															\n "\
-	"				unsigned char a10, a11, a12;															\n "\
-	"				unsigned char a20, a21, a22;															\n "\
-	"				int width=array3[0];																	\n "\
-	"				int heigh=array3[1];																	\n "\
-	"				int widthStep=array3[2];																\n "\
-	"				if(gidy>0&&gidy<heigh-1&&gidx>0&&gidx<width-1)											\n "\
-	"				{																						\n "\
-	"					a00 = array1[gidx-1+widthStep*(gidy-1)];											\n "\
-	"					a01 = array1[gidx+widthStep*(gidy-1)];												\n "\
-	"					a02 = array1[gidx+1+widthStep*(gidy-1)];											\n "\
-	"					a10 = array1[gidx-1+widthStep*gidy];												\n "\
-	"					a11 = array1[gidx+widthStep*gidy];													\n "\
-	"					a12 = array1[gidx+1+widthStep*gidy];												\n "\
-	"					a20 = array1[gidx-1+widthStep*(gidy+1)];											\n "\
-	"					a21 = array1[gidx+widthStep*(gidy+1)];												\n "\
-	"					a22 = array1[gidx+1+widthStep*(gidy+1)];											\n "\
-	"					float ux=a20+2*a21+a22-a00-2*a01-a02;												\n "\
-	"					float uy=a02+2*a12+a22-a00-2*a10-a20;												\n "\
-	"					//array2[gidx+width*gidy]=sqrt(ux*ux + uy*uy);										\n "\
-	"					float u=sqrt(ux*ux + uy*uy);														\n "\
-	"					if(u>255) {																			\n "\
-	"						u=-1;																			\n "\
-	"					} else if(u<20) {																	\n "\
-	"						u=0;																			\n "\
-	"					}																					\n "\
-	"					array2[gidx+widthStep*gidy]=u;														\n "\
-	"				}																						\n "\
-"}"
+const char* simple_source =
+        "__kernel                                           \n"
+        "void simpleMultiply(__global float* outputC,       \n"
+        "int widthA,                                        \n"
+        "int heightA,                                       \n"
+        "int widthB,                                        \n"
+        "int heightB,                                       \n"
+        "__global float* inputA,                            \n"
+        "__global float* inputB)                            \n"
+        "{                                                  \n"
+        "int row=get_global_id(1);                          \n"
+        "int col=get_global_id(0);                          \n"
+        "float sum=0.0f;                                    \n"
+        "for(int i=0;i<widthA;i++){                         \n"
+        "sum+=inputA[row*widthA+i]*inputB[i*widthB+col];    \n"
+        "}                                                  \n"
+        "outputC[row*widthB+col]=sum;                       \n"
+        "}";
+
+const char* muti_source =
+        "#define BLOCKSIZE 8													\n"
+        "__kernel void multMatrix(__global float *mO,							\n"
+        "                         int widthA,                                        \n"
+        "                         int heightA,                                       \n"
+        "                         int widthB,                                        \n"
+        "                         int heightB,                                       \n"
+        "                         __global float *mA,							\n"
+        "                         __global float *mB)				     		\n"
+        "{																		\n"
+        "	uint lx = get_local_id(0);											\n"
+        "	uint ly = get_local_id(1);											\n"
+        "	int gx = get_group_id(0);											\n"
+        "	int gy = get_group_id(1);											\n"
+        "	uint iSubA = BLOCKSIZE * gy * widthA;								\n"
+        "	uint iSubB = BLOCKSIZE * gx;										\n"
+        "	int n = get_num_groups(0);											\n"
+        "	float sum = 0;														\n"
+        "	for(int i=0; i< n;i++)												\n"
+        "	{																	\n"
+        "	  __local float tA[BLOCKSIZE][BLOCKSIZE];							\n"
+        "	  __local float tB[BLOCKSIZE][BLOCKSIZE];							\n"
+        "	  tA[ly][lx] = mA[ly*widthA + lx + (iSubA + i* BLOCKSIZE)];			\n"
+        "	  tB[ly][lx] = mB[ly*widthB + lx + (iSubB + i* BLOCKSIZE * widthB)];\n"
+        "	  barrier(CLK_LOCAL_MEM_FENCE);										\n"
+        "	  for(int k=0; k<BLOCKSIZE; k++){									\n"
+        "	    sum += tA[ly][k] * tB[k][lx];									\n"
+        "	  }																	\n"
+        "	}																	\n"
+        "	int globalIdx=get_global_id(0);										\n"
+        "	int globalIdy=get_global_id(1);										\n"
+        "	mO[globalIdy * widthA + globalIdx] = sum;							\n"
+        "}";
+
+float * simpleMultiply(int len) {
+    float*A = NULL;
+    float*B = NULL;
+    float*C = NULL;
+    float*C2 = NULL;
+    clock_t matrix_start, matrix_finish;
+    cl_int ciErrNum;
+
+    int wA = len, hA = len;
+    int wB = len, hB = len;
+    int wC = len, hC = len;
+
+    const int elementsA = wA * hA;
+    const int elementsB = wB * hB;
+    const int elementsC = hA * wB;
+
+    // 计算内存大小
+    size_t datasizeA = sizeof(float) * elementsA;
+    size_t datasizeB = sizeof(float) * elementsB;
+    size_t datasizeC = sizeof(float) * elementsC;
+    // 分配内存空间
+    A = (float*) malloc(datasizeA);
+    B = (float*) malloc(datasizeB);
+    C = (float*) malloc(datasizeC);
+    C2 = (float*) malloc(datasizeC);
+
+    //init the data
+    for (int i = 0; i < wA * hA; i++)
+        A[i] = 3.0;
+
+    for (int i = 0; i < wB * hB; i++)
+        B[i] = 2.0;
+
+    matrix_start = clock();
+    cl_platform_id platform;
+    ciErrNum = clGetPlatformIDs(1, &platform, NULL);
+
+    cl_device_id device;
+    ciErrNum = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, NULL);
+    cl_context_properties cps[3] = {
+            CL_CONTEXT_PLATFORM, (cl_context_properties) platform, 0 };
+
+    cl_context ctx = clCreateContext(cps, 1, &device, NULL, NULL, &ciErrNum);
+    cl_command_queue myqueue = clCreateCommandQueue(ctx, device, 0, &ciErrNum);
+    cl_mem bufferA = clCreateBuffer(ctx, CL_MEM_READ_ONLY,
+                                    wA * hA * sizeof(float), NULL, &ciErrNum);
+    ciErrNum = clEnqueueWriteBuffer(myqueue, bufferA, CL_TRUE, 0,
+                                    wA * hA * sizeof(float), (void*) A, 0, NULL, NULL);
+    cl_mem bufferB = clCreateBuffer(ctx, CL_MEM_READ_ONLY,
+                                    wB * hB * sizeof(float), NULL, &ciErrNum);
+    ciErrNum = clEnqueueWriteBuffer(myqueue, bufferB, CL_TRUE, 0,
+                                    wB * hB * sizeof(float), (void*) B, 0, NULL, NULL);
+    cl_mem bufferC = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY,
+                                    hA * wB * sizeof(float), NULL, &ciErrNum);
+
+    cl_program myprog = clCreateProgramWithSource(ctx, 1,
+                                                  (const char**) &simple_source, NULL, &ciErrNum);
+    ciErrNum = clBuildProgram(myprog, 0, NULL, NULL, NULL, NULL);
+    cl_kernel mykernel = clCreateKernel(myprog, "simpleMultiply", &ciErrNum);
+
+
+    clSetKernelArg(mykernel, 0, sizeof(cl_mem), (void*) &bufferC);
+    clSetKernelArg(mykernel, 1, sizeof(cl_int), (void*) &wA);
+    clSetKernelArg(mykernel, 2, sizeof(cl_int), (void*) &hA);
+    clSetKernelArg(mykernel, 3, sizeof(cl_int), (void*) &wB);
+    clSetKernelArg(mykernel, 4, sizeof(cl_int), (void*) &hB);
+    clSetKernelArg(mykernel, 5, sizeof(cl_mem), (void*) &bufferA);
+    clSetKernelArg(mykernel, 6, sizeof(cl_mem), (void*) &bufferB);
+
+    size_t localws[2] = { 8, 8 };
+    size_t globalws[2] = { (size_t)wC, (size_t)hC };
+
+    ciErrNum = clEnqueueNDRangeKernel(myqueue, mykernel, 2, NULL, globalws,
+                                      localws, 0, NULL, NULL);
+    ciErrNum = clEnqueueReadBuffer(myqueue, bufferC, CL_TRUE, 0,
+                                   wC * hC * sizeof(float), (void*) C, 0, NULL, NULL);
+    matrix_finish = clock();
+
+    double time_t = (double)(matrix_finish - matrix_start) / CLOCKS_PER_SEC;
+    LOGD("Gpu matrix simple multiply - used time: %f s", time_t);
+    clReleaseKernel(mykernel);
+    clReleaseProgram(myprog);
+    clReleaseCommandQueue(myqueue);
+    clReleaseMemObject(bufferA);
+    clReleaseMemObject(bufferB);
+    clReleaseMemObject(bufferC);
+    clReleaseContext(ctx);
+
+    matrix_start = clock();
+    for (int i=0; i < hA; i++) {
+        for (int j=0; j < wB; j++) {
+            float acc = 0.0f;
+            for (int k=0; k < wA; k++) {
+                acc += A[i*hA + k] * B[k * wB + k];
+            }
+            C2[i*hA + j] = acc;
+        }
+    }
+    matrix_finish = clock();
+    time_t = (double)(matrix_finish - matrix_start) / CLOCKS_PER_SEC;
+    LOGD("Cpu matrix multiply - used time: %f s ", time_t);
+
+    int idx;
+    for (idx = 0; idx < wC * hC; idx++) {
+        if (C[idx] != C2[idx]) {
+            LOGD("matrix multiply err at i=%d C=%f C2=%f", idx, C[idx], C2[idx]);
+            break;
+        }
+    }
+
+    if (idx >= wC * hC) {
+        LOGD("matrix multiply - right");
+    }
+
+
+    free(A);
+    free(B);
+    free(C);
+    return C2;
+}
 
 
 void dumpCLInfo()
@@ -126,16 +264,16 @@ void initOpenCL() {
 }
 
 const char *kernel_vadd =
-        "__kernel void vecAdd(  __global int *a,\n"
-        "                       __global int *b,\n"
-        "                       __global int *c,\n"
+        "__kernel void vecAdd(  __global float *a,\n"
+        "                       __global float *b,\n"
+        "                       __global float *c,\n"
         "                       const unsigned int n)\n"
         "{\n"
         "    int id = get_global_id(0);\n"
         "    c[id] = a[id] + b[id];\n"
         "}\n";
 
-void VectorAddByGpu(void) {
+float * VectorAddBenchMark(void) {
 
     clock_t start_t, end_t;
 
@@ -144,10 +282,11 @@ void VectorAddByGpu(void) {
     unsigned int n = 147456;
 
     // Host input vectors
-    int *h_a;
-    int *h_b;
+    float *h_a;
+    float *h_b;
     // Host output vector
-    int *h_c;
+    float *h_c;
+    float *h_d;
 
     // Device input buffers
     cl_mem d_a;
@@ -163,12 +302,13 @@ void VectorAddByGpu(void) {
     cl_kernel kernel;                 // kernel
 
     // Size, in bytes, of each vector
-    size_t bytes = n * sizeof(int);
+    size_t bytes = n * sizeof(float);
 
     // Allocate memory for each vector on host
-    h_a = (int *) malloc(bytes);
-    h_b = (int *) malloc(bytes);
-    h_c = (int *) malloc(bytes);
+    h_a = (float *) malloc(bytes);
+    h_b = (float *) malloc(bytes);
+    h_c = (float *) malloc(bytes);
+    h_d = (float *) malloc(bytes);
 
     // Initialize vectors on host
     int i;
@@ -181,7 +321,7 @@ void VectorAddByGpu(void) {
     size_t globalSize, localSize;
     cl_int err;
     // Number of work items in each local work group
-    localSize = 64;
+    localSize = 1024;
 
     // Number of total work items - localSize must be devisor
     globalSize = n;
@@ -225,10 +365,9 @@ void VectorAddByGpu(void) {
     // Execute the kernel over the entire range of the data set
     err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &globalSize, &localSize,
                                  0, NULL, NULL);
-    double k2 = clock();
-
     // Wait for the command queue to get serviced before reading back results
-//    clFinish(queue);
+    clFinish(queue);
+    double k2 = clock();
 
     // Read the results from the device
     clEnqueueReadBuffer(queue, d_c, CL_TRUE, 0,
@@ -242,7 +381,7 @@ void VectorAddByGpu(void) {
 
     for (i = 0; i < n; i++) {
         if(h_c[i] != (h_a[i] + h_b[i])) {
-            LOGD("Vector add err at i=%d c=%d a=%d b=%d", i, h_c[i], h_a[i], h_b[i]);
+            LOGD("Vector add err at i=%d c=%f a=%f b=%f", i, h_c[i], h_a[i], h_b[i]);
             break;
         }
     }
@@ -254,7 +393,7 @@ void VectorAddByGpu(void) {
 
     start_t = clock(); // Start Time!
     for (i = 0; i < n; i++) {
-        h_c[i] = h_a[i] + h_b[i];
+        h_d[i] = h_a[i] + h_b[i];
     }
     end_t = clock();
     time_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
@@ -273,6 +412,7 @@ void VectorAddByGpu(void) {
     free(h_a);
     free(h_b);
     free(h_c);
+    return  h_d;
 }
 
 extern "C" {
@@ -282,9 +422,9 @@ JNIEXPORT jstring JNICALL Java_com_white_imagesobelfilter_nativeSobelFilter_sobe
 
 	initOpenCL();
 
-    VectorAddByGpu();
-
-	char rr[100] = "Compute result:\nGPU:";
+//    VectorAddBenchMark();
+    simpleMultiply(1024);
+	char rr[100] = "Compute";
 
 
 	const char* result = rr;
