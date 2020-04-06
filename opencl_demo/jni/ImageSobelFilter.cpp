@@ -10,8 +10,13 @@
 #include <string.h>
 
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "OpenCLDemo", __VA_ARGS__)
+#define KLOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "OpenCLKernel", __VA_ARGS__)
 
 using namespace std;
+
+//  only mtk-mali-gpu support
+//    "#pragma OPENCL EXTENSION cl_arm_printf : enable                 \n"
+// "printf(\"OpenCLDemo_Kernel row=%d col=%d \\n \", row, col);\n"
 
 const char* simple_source =
         "__kernel                                           \n"
@@ -25,6 +30,7 @@ const char* simple_source =
         "{                                                  \n"
         "int row=get_global_id(1);                          \n"
         "int col=get_global_id(0);                          \n"
+
         "float sum=0.0f;                                    \n"
         "for(int i=0;i<widthA;i++){                         \n"
         "sum+=inputA[row*widthA+i]*inputB[i*widthB+col];    \n"
@@ -66,6 +72,16 @@ const char* muti_source =
         "	mO[globalIdy * widthA + globalIdx] = sum;							\n"
         "}";
 
+// Only mtk - mali-gpu support
+void printf_callback( const char *buffer, int len, size_t complete, void *user_data )
+{
+    KLOGD( "%.*s", len, buffer);  // or
+    // fwrite(buffer, 1, length, stdout);
+}
+#define  CL_PRINTF_CALLBACK_ARM    0x40B0
+#define  CL_PRINTF_BUFFERSIZE_ARM  0x40B1
+//////////////////////
+
 float * simpleMultiply(int len) {
     float*A = NULL;
     float*B = NULL;
@@ -105,8 +121,15 @@ float * simpleMultiply(int len) {
 
     cl_device_id device;
     ciErrNum = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, NULL);
-    cl_context_properties cps[3] = {
-            CL_CONTEXT_PLATFORM, (cl_context_properties) platform, 0 };
+    cl_context_properties cps[] = {
+            CL_CONTEXT_PLATFORM, (cl_context_properties) platform,
+            0 };
+    // MTK-arm-mali gpu printf
+//    cl_context_properties cps[] = {
+//            CL_CONTEXT_PLATFORM, (cl_context_properties) platform,
+//            CL_PRINTF_CALLBACK_ARM,   (cl_context_properties) printf_callback,
+//            CL_PRINTF_BUFFERSIZE_ARM, (cl_context_properties) 0x100000,
+//            0 };
 
     cl_context ctx = clCreateContext(cps, 1, &device, NULL, NULL, &ciErrNum);
     cl_command_queue myqueue = clCreateCommandQueue(ctx, device, 0, &ciErrNum);
@@ -125,7 +148,6 @@ float * simpleMultiply(int len) {
                                                   (const char**) &simple_source, NULL, &ciErrNum);
     ciErrNum = clBuildProgram(myprog, 0, NULL, NULL, NULL, NULL);
     cl_kernel mykernel = clCreateKernel(myprog, "simpleMultiply", &ciErrNum);
-
 
     clSetKernelArg(mykernel, 0, sizeof(cl_mem), (void*) &bufferC);
     clSetKernelArg(mykernel, 1, sizeof(cl_int), (void*) &wA);
@@ -417,133 +439,63 @@ float * VectorAddBenchMark(void) {
 
 extern "C" {
 
+#include <android/log.h>
+#include <pthread.h>
+#include <unistd.h>
+
+static int pfd[2];
+static pthread_t loggingThread;
+static const char *LOG_TAG = "STDOUT";
+
+static void *loggingFunction(void*) {
+    ssize_t readSize;
+    char buf[128];
+
+    while((readSize =
+            (pfd[0], buf, sizeof buf - 1)) > 0) {
+        if(buf[readSize - 1] == '\n') {
+            --readSize;
+        }
+
+        buf[readSize] = 0;  // add null-terminator
+
+        __android_log_write(ANDROID_LOG_DEBUG, LOG_TAG, buf); // Set any log level you want
+    }
+
+    return 0;
+}
+
+static int runLoggingThread() { // run this function to redirect your output to android log
+    setvbuf(stdout, 0, _IOLBF, 0); // make stdout line-buffered
+    setvbuf(stderr, 0, _IONBF, 0); // make stderr unbuffered
+
+    /* create the pipe and redirect stdout and stderr */
+    pipe(pfd);
+    dup2(pfd[1], 1);
+    dup2(pfd[1], 2);
+
+    /* spawn the logging thread */
+    if(pthread_create(&loggingThread, 0, loggingFunction, 0) == -1) {
+        return -1;
+    }
+
+    pthread_detach(loggingThread);
+
+    return 0;
+}
+
+
 JNIEXPORT jstring JNICALL Java_com_white_imagesobelfilter_nativeSobelFilter_sobelFilter(
 		JNIEnv* env, jobject thiz, jstring imagePath) {
-
+//    runLoggingThread();
+//    printf("This message comes from stdout\n");
 	initOpenCL();
 
-//    VectorAddBenchMark();
+    VectorAddBenchMark();
     simpleMultiply(1024);
 	char rr[100] = "Compute";
-
-
 	const char* result = rr;
 	return env->NewStringUTF(rr);
 }
 }
 
-
-
-//void opencl_process(void) {
-//    LOGD("opencl_process 00000\n");
-//	initFns();
-//	/* */
-//	cl_uint numPlatforms; //the NO. of platforms
-//	cl_platform_id platform = NULL; //the chosen platform
-//	cl_int status;
-//	cl_platform_id* platforms;
-//	cl_uint numDevices = 0;
-//	cl_device_id *devices;
-//	cl_context context;
-//	cl_command_queue commandQueue;
-//	cl_program program;
-//	cl_kernel kernel;
-//	//size_t global;
-//	cl_mem a1, a2, a3;
-//    LOGD("opencl_process 11111\n");
-//
-//	char *inputData1;
-//
-//
-//	/*Step1: Getting platforms and choose an available one.*/
-//    LOGD("opencl_process 22222 clGetPlatformIDs=%p\n", clGetPlatformIDs);
-//	status = clGetPlatformIDs(0, NULL, &numPlatforms);
-//    LOGD("opencl_process 33333 numPlatforms=%d\n", numPlatforms);
-//	/*For clarity, choose the first available platform. */
-//	if (numPlatforms > 0) {
-//		platforms = (cl_platform_id*) malloc(
-//				numPlatforms * sizeof(cl_platform_id));
-//		status = clGetPlatformIDs(numPlatforms, platforms, NULL);
-//		platform = platforms[0];
-//		free(platforms);
-//	}
-//
-//	/*Step 2:Query the platform and choose the first GPU device if has one.Otherwise use the CPU as device.*/
-//	status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
-//	if (numDevices == 0) {
-//		//no GPU available.
-//        LOGD("No GPU device available.\n");
-//        LOGD("Choose CPU as default device.\n");
-//		status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 0, NULL,
-//				&numDevices);
-//		devices = (cl_device_id*) malloc(numDevices * sizeof(cl_device_id));
-//		status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, numDevices,
-//				devices, NULL);
-//	} else {
-//		devices = (cl_device_id*) malloc(numDevices * sizeof(cl_device_id));
-//		status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, numDevices,
-//				devices, NULL);
-//	}
-//	devices = (cl_device_id*) malloc(numDevices * sizeof(cl_device_id));
-//	status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, numDevices, devices,
-//			NULL);
-//
-//	/*Step 3: Create context.*/
-//	context = clCreateContext(NULL, 1, devices, NULL, NULL, &status);
-//
-//	/*Step 4: Creating command queue associate with the context.*/
-//	commandQueue = clCreateCommandQueue(context, devices[0], 0, &status);
-//
-//	/*Step 5: Create program object */
-//	const char *source = KERNEL_SRC;
-//	size_t sourceSize[] = { strlen(source) };
-//	program = clCreateProgramWithSource(context, 1, &source, sourceSize,
-//			&status);
-//
-//	/*Step 6: Build program. */
-//	status = clBuildProgram(program, 1, devices, NULL, NULL, NULL);
-//
-//	a1 = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-//			sizeof(unsigned char) * IN_DATA_SIZE, inputData1, &status);
-//
-//	a2 = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-//			sizeof(unsigned char) * OUT_DATA_SIZE, outputData, &status);
-//
-//	a3 = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-//			sizeof(int) * 3, inputData2, &status);
-//
-//	/*Step 8: Create kernel object */
-//	kernel = clCreateKernel(program, "Sobel", &status);
-//
-//	// set the argument list for the kernel command
-//	status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &a1);
-//	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &a2);
-//	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &a3);
-//
-//	size_t local[] = { 11, 11 };
-//	size_t global[2];
-//	global[0] = (
-//			IMG_WIDTH % local[0] == 0 ?
-//					IMG_WIDTH : (IMG_WIDTH + local[0] - IMG_WIDTH % local[0]));
-//	global[1] =
-//			(IMG_HEIGHT % local[1] == 0 ?
-//					IMG_HEIGHT : (IMG_HEIGHT + local[1] - IMG_HEIGHT % local[1]));
-//
-//	status = clEnqueueNDRangeKernel(commandQueue, kernel, 2, NULL, global,
-//			local, 0, NULL, NULL);
-//	if (status != 0)
-//		return;
-//	clFinish(commandQueue);
-//
-//	clEnqueueReadBuffer(commandQueue, a2, CL_TRUE, 0,
-//			sizeof(unsigned char) * OUT_DATA_SIZE, outputData, 0, NULL, NULL);
-//
-//	clReleaseMemObject(a1);
-//	clReleaseMemObject(a2);
-//	clReleaseMemObject(a3);
-//	clReleaseProgram(program);
-//	clReleaseKernel(kernel);
-//	clReleaseCommandQueue(commandQueue);
-//	clReleaseContext(context);
-//
-//}
